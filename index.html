@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#b80016">
+<title>Orion FC | Presença</title>
+<style>
+:root{--red:#e00020;--bg:#090909;--panel:#171717;--muted:#aaa;--line:#333}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f7f7f7;font:16px system-ui,Arial,sans-serif}
+header{padding:22px 16px;background:linear-gradient(120deg,#390008,#0a0a0a 65%);border-bottom:2px solid var(--red)}
+.wrap{max-width:1000px;margin:auto;padding:16px}h1{margin:0;font-size:25px;letter-spacing:1px}header p{margin:5px 0 0;color:#ddd}
+nav{display:flex;gap:8px;overflow:auto;margin:14px 0}button,.tab{border:1px solid #444;background:#202020;color:white;padding:10px 13px;border-radius:10px;font-weight:650;cursor:pointer}button.primary{background:var(--red);border-color:var(--red)}button.danger{background:#5c1019;border-color:#a82031;color:#fff}button:disabled{opacity:.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#202020;border-radius:12px;padding:14px}.stat b{display:block;font-size:26px}.stat span{font-size:12px;color:var(--muted)}
+input,select{width:100%;padding:12px;background:#0d0d0d;color:white;border:1px solid #444;border-radius:9px;margin:5px 0 12px;font:inherit}
+label{font-size:13px;color:#ddd} .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}
+.item{padding:12px 0;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;gap:10px}.item:last-child{border:0}.muted{color:var(--muted);font-size:13px}.pill{font-size:12px;padding:4px 8px;border-radius:20px;background:#292929}.ok{color:#73e3a1}.bad{color:#ff687a}
+.notice{color:#ffd7a1;font-size:13px;line-height:1.5}.message{padding:12px;border-radius:9px;margin-top:10px;background:#222}.small{font-size:12px}
+@media(max-width:550px){.row{grid-template-columns:1fr}.stats{gap:6px}.stat{padding:10px}.stat b{font-size:22px}.wrap{padding:12px}}
+button{touch-action:manipulation}input[type=number]{font-variant-numeric:tabular-nums}table th,table td{border-bottom:1px solid #333;text-align:left;padding:8px}@media print{nav,header,#loginGate,button{display:none!important}main section{display:block!important}.hidden{display:block!important}}
+</style>
+
+</head>
+<body>
+
+<div id="loginGate" style="position:fixed;inset:0;z-index:9999;background:#090909;display:flex;align-items:center;justify-content:center;padding:20px">
+ <form id="loginForm" style="width:100%;max-width:380px;background:#171717;border:1px solid #333;border-radius:16px;padding:24px">
+  <h2 style="margin:0 0 8px">ORION <span style="color:#ff203e">FC</span></h2>
+  <p class="muted">Digite a senha para entrar no sistema.</p>
+  <label for="appPassword">Senha</label>
+  <input id="appPassword" type="password" autocomplete="current-password" placeholder="Digite a senha" required>
+  <button class="primary" type="submit" style="width:100%">Entrar</button>
+  <p id="loginError" class="bad" style="display:none;margin-bottom:0">Senha incorreta. Tente novamente.</p>
+ </form>
+</div>
+
+<header><div class="wrap"><h1>ORION <span style="color:#ff203e">FC</span></h1><p>Controle de presença • Treinos</p></div></header>
+<main class="wrap">
+<div class="stats"><div class="stat"><b id="playersCount">7</b><span>JOGADORES</span></div><div class="stat"><b id="presCount">0</b><span>PRESENÇAS</span></div><div class="stat"><b id="absCount">0</b><span>FALTAS REGISTRADAS</span></div></div>
+<nav>
+<button class="primary" data-tab="check">Validar presença</button><button data-tab="players">Jogadores e códigos</button><button data-tab="notes">Notas e pontuação</button><button data-tab="history">Relatórios</button><button data-tab="results">Resultados</button><button data-tab="settings">Treino / dados</button>
+</nav>
+<section id="check" class="panel">
+<h2>Validar presença</h2><p class="muted">Abra um treino antes de registrar. Cada jogador só pode confirmar uma vez por treino.</p>
+<label>Treino ativo</label><select id="sessionSelect"></select>
+<label>Escolher jogador</label><select id="playerSelect"></select>
+<button class="primary" id="validateBtn">Registrar presença</button>
+<p class="muted">Escolha o jogador e toque no botão para registrar a presença.</p>
+<div id="checkMessage" aria-live="polite"></div>
+<h3>Presentes neste treino</h3><div id="presentList" class="muted">Nenhuma presença registrada.</div>
+</section>
+<section id="players" class="panel hidden"><h2>Jogadores</h2><div id="playerList"></div>
+<h3>Adicionar jogador</h3><label>Nome</label><input id="newName" placeholder="Nome do jogador"><button class="primary" id="addPlayer">Adicionar jogador</button></section>
+<section id="notes" class="panel hidden"><h2>Notas e pontuação</h2><p class="muted">Altere a pontuação quando quiser. Você pode somar ou descontar qualquer valor.</p><div id="playerScores"></div></section>
+
+<section id="results" class="panel hidden"><h2>Resultados dos treinos</h2><p class="muted">Relatórios completos prontos para compartilhar, baixar ou imprimir.</p><div id="resultPages"></div></section>
+<section id="history" class="panel hidden"><h2>Relatórios</h2><label>Filtrar jogador</label><select id="reportPlayer"></select><div id="reportSummary"></div><h3>Treinos anteriores</h3><div id="sessionHistory"></div><button id="exportBtn">Exportar presenças/faltas CSV</button><div id="savedReports"></div><h3>Apagar relatórios</h3><p class="notice">Apagar um relatório também remove os registros de presença/falta daquele treino.</p><div id="deleteReportsList"></div></section>
+<section id="settings" class="panel hidden"><h2>Treino / dados</h2><label>Data do treino</label><input id="sessionDate" type="date"><label>Nome/descrição do treino</label><input id="sessionName" placeholder="Ex.: Treino de quinta-feira"><button class="primary" id="createSession">Criar treino</button><button class="danger" id="resetTrainings" style="width:100%;margin-top:10px">Zerar todos os treinos</button><p class="notice">Você pode confirmar as presenças agora e voltar depois: elas ficam salvas neste aparelho. O relatório é opcional. Ao finalizar, as faltas serão registradas e o relatório ficará pronto para baixar e enviar.</p><h3>Relatório do treino</h3><label for="sessionReport">Relatório do treino (opcional)</label><textarea id="sessionReport" rows="8" placeholder="Escreva aqui os detalhes do treino, se quiser (opcional)." style="width:100%;padding:12px;background:#0d0d0d;color:white;border:1px solid #444;border-radius:9px;font:inherit"></textarea><button id="saveReportDraft">Salvar relatório e continuar depois</button><p id="reportDraftMessage" class="muted" aria-live="polite"></p><label>Senha para encerrar</label><input id="closePassword" type="password" placeholder="Digite a senha"><button class="primary" id="closeSession">Concluir relatório e encerrar treino</button><div id="finishedReport"></div><hr style="border-color:#333;margin:18px 0"><h3>Backup</h3><button id="backupBtn">Baixar backup JSON</button><label style="display:block;margin-top:12px">Restaurar backup JSON</label><input type="file" id="restoreFile" accept=".json,application/json"><p class="notice">Protótipo: os dados ficam salvos somente neste navegador/aparelho. Para compartilhar registros entre celulares, será necessário conectar um banco de dados online e proteger o acesso do treinador.</p></section>
+<p class="muted small">Orion FC • Protótipo inicial. Não use como registro oficial até configurar backup e controle de acesso.</p>
+</main>
+<script>
+const APP_PASSWORD="Orion2026";
+document.getElementById("loginForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ const field=document.getElementById("appPassword");
+ if(field.value===APP_PASSWORD){
+  document.getElementById("loginGate").style.display="none";
+ }else{
+  document.getElementById("loginError").style.display="block";
+  field.select();
+ }
+});
+const initialPlayers=[
+{name:"Samuel",code:"OR-001-SAMUEL"},{name:"Ulisses",code:"OR-002-ULISSES"},{name:"Pedro",code:"OR-003-PEDRO"},{name:"Thiago",code:"OR-004-THIAGO"},{name:"Brayan",code:"OR-005-BRAYAN"},{name:"Gabriel",code:"OR-006-GABRIEL"},{name:"Deivid",code:"OR-007-DEIVID"}];
+const KEY="orion_fc_attendance_v1";
+let db;try{db=JSON.parse(localStorage.getItem(KEY))||null}catch(e){}
+if(!db)db={players:initialPlayers,sessions:[],activeId:null,records:[]};
+if(!Array.isArray(db.players))db.players=initialPlayers;if(!Array.isArray(db.sessions))db.sessions=[];if(!Array.isArray(db.records))db.records=[];db.players.forEach((p,i)=>{if(!p.code)p.code="OR-"+String(i+1).padStart(3,"0")+"-JOGADOR";if(typeof p.score!=="number")p.score=100;if(typeof p.notes!=="string")p.notes="";if(!p.grade)p.grade="";});
+const RESET_FLAG="orion_fc_reset_all_once_v1";
+if(localStorage.getItem(RESET_FLAG)!=="done"){
+  db.players.forEach(p=>{p.score=0;p.notes="";p.grade="";});
+  db.sessions=[];
+  db.records=[];
+  db.activeId=null;
+  localStorage.setItem(KEY,JSON.stringify(db));
+  localStorage.setItem(RESET_FLAG,"done");
+}
+const $=id=>document.getElementById(id), today=()=>new Date().toLocaleDateString("en-CA");
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function active(){return db.sessions.find(s=>s.id===db.activeId&&!s.closed)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function recordFor(sid,pid){return db.records.find(r=>r.sessionId===sid&&r.playerCode===pid)}
+function render(){
+ $("playersCount").textContent=db.players.length;$("presCount").textContent=db.records.filter(r=>r.status==="present").length;$("absCount").textContent=db.records.filter(r=>r.status==="absent").length;
+ const sel=$("sessionSelect");sel.innerHTML=db.sessions.filter(s=>!s.closed).map(s=>`<option value="${s.id}">${esc(s.name)} — ${s.date}</option>`).join("")||'<option value="">Nenhum treino aberto</option>';if(db.activeId&&[...sel.options].some(o=>o.value===db.activeId))sel.value=db.activeId;
+ $("presentList").innerHTML=active()?db.records.filter(r=>r.sessionId===active().id&&r.status==="present").map(r=>`<div class="item"><div><b>${esc(db.players.find(p=>p.code===r.playerCode)?.name||r.playerCode)}</b>${r.photo?`<br><img src="${r.photo}" alt="Foto da presença" style="width:76px;height:76px;object-fit:cover;border-radius:8px;margin-top:6px">`:""}</div><span class="pill ok">${esc(r.time)}</span></div>`).join("")||"Nenhuma presença registrada.":"Crie um treino na aba Treino / dados.";
+ $("playerList").innerHTML=db.players.map(p=>`<div class="item"><div><b>${esc(p.name)}</b></div><button class="danger" data-delete="${esc(p.code)}">Excluir jogador</button></div>`).join("")||"Nenhum jogador cadastrado.";
+ const ps=$("playerSelect"),oldPlayer=ps.value;ps.innerHTML=db.players.map(p=>`<option value="${esc(p.code)}">${esc(p.name)}</option>`).join("")||'<option value="">Nenhum jogador cadastrado</option>';if(db.players.some(p=>p.code===oldPlayer))ps.value=oldPlayer;
+ $("playerScores").innerHTML=db.players.map(p=>`<div class="panel"><div class="item"><div><b>${esc(p.name)}</b><div class="muted">Pontuação acumulada</div></div><strong style="font-size:25px;color:#ff4058">${Number(p.score)||0}</strong></div><label style="display:block;margin-top:12px">Notas de ${esc(p.name)}</label><textarea data-notes="${esc(p.code)}" rows="3" style="width:100%;padding:12px;background:#0d0d0d;color:white;border:1px solid #444;border-radius:9px;font:inherit">${esc(p.notes)}</textarea><label>Classificação no treino</label><select data-grade="${esc(p.code)}"><option value="">Ainda não avaliado</option>${["SS","A","B","C","D"].map(g=>`<option value="${g}" ${p.grade===g?"selected":""}>${g}</option>`).join("")}</select></div>`).join("")||"Nenhum jogador cadastrado.";
+ $("reportPlayer").innerHTML='<option value="all">Todos os jogadores</option>'+db.players.map(p=>`<option value="${esc(p.code)}">${esc(p.name)}</option>`).join("");
+ $("sessionHistory").innerHTML=db.sessions.slice().reverse().map(s=>`<div class="item"><div><b>${esc(s.name)}</b><div class="muted">${s.date} • ${s.closed?"Encerrado":"Em andamento"}</div></div><span class="pill">${db.records.filter(r=>r.sessionId===s.id&&r.status==="present").length} presentes</span></div>`).join("")||"Nenhum treino cadastrado.";
+  $("deleteReportsList").innerHTML=db.sessions.filter(s=>s.closed).slice().reverse().map(s=>`<div class="item"><div><b>${esc(s.name)}</b><div class="muted">${esc(s.date)}</div></div><button class="danger" data-delete-report="${esc(s.id)}">Excluir relatório</button></div>`).join("")||'<p class="muted">Nenhum relatório para excluir.</p>';
+ report();
+}
+function report(){const code=$("reportPlayer").value||"all";let players=code==="all"?db.players:db.players.filter(p=>p.code===code);let html="";
+ for(const p of players){const rec=db.records.filter(r=>r.playerCode===p.code);const present=rec.filter(r=>r.status==="present").length,abs=rec.filter(r=>r.status==="absent").length,total=present+abs,pct=total?Math.round(present/total*100):0;html+=`<div class="item"><div><b>${esc(p.name)}</b><div class="muted">${present} presenças • ${abs} faltas • ${pct}% de frequência</div></div><span class="pill">${total} treinos</span></div>`}
+ $("reportSummary").innerHTML=html||"Sem registros.";
+}
+function buildLineup(){
+  const ranked=db.players.slice().sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)||a.name.localeCompare(b.name));
+  const pos=["Goleiro","Fixo","Ala direita","Ala esquerda","Pivô"];
+  return {formation:"Futsal (1-2-1)",starters:ranked.slice(0,5).map((p,i)=>({name:p.name,score:Number(p.score)||0,position:pos[i]})),reserves:ranked.slice(5).map(p=>({name:p.name,score:Number(p.score)||0}))};
+}
+function resultText(s){
+ const rec=db.records.filter(r=>r.sessionId===s.id),out=[`ORION FC — RESULTADO DO TREINO`,`Treino: ${s.name}`,`Data: ${s.date}`,"","RELATÓRIO:",s.report||"—","","PRESENÇAS:",...rec.filter(r=>r.status==="present").map(r=>db.players.find(p=>p.code===r.playerCode)?.name||r.playerCode),"","FALTAS:",...rec.filter(r=>r.status==="absent").map(r=>db.players.find(p=>p.code===r.playerCode)?.name||r.playerCode),"","PONTUAÇÃO E NOTAS:"];
+ db.players.forEach(p=>out.push(`${p.name}: ${p.score} pontos | Nota: ${(s.grades||{})[p.code]||"—"} | Alteração: ${((s.pointChanges||{})[p.code]||0)>0?"+":""}${(s.pointChanges||{})[p.code]??0}`));
+ if(s.lineup){out.push("",`ESCALAÇÃO ${s.lineup.formation} — após ${s.completedCount} treinos`);s.lineup.starters.forEach((p,i)=>out.push(`${i+1}. ${p.name} — ${p.position} — ${p.score} pontos`));out.push("Reservas: "+(s.lineup.reserves.map(p=>`${p.name} (${p.score})`).join(", ")||"Nenhuma"));}
+ return out.join("\n");
+}
+function renderResults(){
+ const list=db.sessions.filter(s=>s.closed).slice().reverse();
+ $("resultPages").innerHTML=list.map(s=>{
+ const rec=db.records.filter(r=>r.sessionId===s.id),rows=db.players.map(p=>{const r=rec.find(x=>x.playerCode===p.code);return `<tr><td>${esc(p.name)}</td><td>${r?.status==="present"?"Presente":"Falta"}</td><td>${esc((s.grades||{})[p.code]||"—")}</td><td>${((s.pointChanges||{})[p.code]||0)>0?"+":""}${(s.pointChanges||{})[p.code]??0}</td><td>${Number(p.score)||0}</td></tr>`}).join("");
+ const lineup=s.lineup?`<h3>Escalação automática — ${s.lineup.formation}</h3><p class="muted">Gerada após o ${s.completedCount}º treino, pela pontuação acumulada.</p><ol>${s.lineup.starters.map(p=>`<li><b>${esc(p.name)}</b> — ${esc(p.position)} • ${p.score} pontos</li>`).join("")}</ol><h4>Reservas</h4><p>${s.lineup.reserves.map(p=>`${esc(p.name)} (${p.score} pts)`).join(", ")||"Sem reservas."}</p>`:"";
+ return `<article class="panel"><h2>${esc(s.name)}</h2><p class="muted">${esc(s.date)} • Concluído</p><p><b>Presentes:</b> ${rec.filter(r=>r.status==="present").length} &nbsp; <b>Faltas:</b> ${rec.filter(r=>r.status==="absent").length}</p><h3>Relatório do treinador</h3><div class="message">${esc(s.report||"").replace(/\n/g,"<br>")}</div><h3>Desempenho</h3><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Jogador</th><th>Presença</th><th>Nota</th><th>Alteração</th><th>Pontos</th></tr></thead><tbody>${rows}</tbody></table></div>${lineup}<div class="row" style="margin-top:12px"><button class="primary" data-share-result="${esc(s.id)}">Compartilhar resultado completo</button><button data-download-result="${esc(s.id)}">Baixar relatório</button></div><button style="width:100%;margin-top:8px" onclick="window.print()">Imprimir / salvar PDF</button></article>`;
+ }).join("")||'<p class="muted">Nenhum treino concluído ainda.</p>';
+}
+async function shareResult(id){const s=db.sessions.find(x=>x.id===id);if(!s)return;const text=resultText(s);if(navigator.share){try{await navigator.share({title:`ORION FC — ${s.name}`,text});return}catch(e){if(e.name==="AbortError")return}}download(`orion-fc-resultado-${s.date}.txt`,text,"text/plain;charset=utf-8");alert("Relatório completo baixado em TXT para compartilhar.");}
+
+function message(text,ok=false){$("checkMessage").innerHTML=`<div class="message ${ok?"ok":"bad"}">${text}</div>`}
+function validateWithPhoto(){
+ const s=active();
+ if(!s){message("Crie ou selecione um treino aberto antes de registrar.");return}
+ const code=$("playerSelect").value;
+ const p=db.players.find(p=>p.code===code);
+ if(!p){message("Escolha um jogador.");return}
+ if(recordFor(s.id,p.code)){message(`${esc(p.name)} já tem um registro neste treino.`);return}
+ const now=new Date();
+ const record={sessionId:s.id,playerCode:p.code,status:"present",time:now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),date:s.date};
+ db.records.push(record);
+ try{
+  save();
+  message(`Presença confirmada: ${esc(p.name)} • ${s.date}`,true);
+ }catch(err){
+  db.records=db.records.filter(r=>r!==record);
+  message("Não foi possível salvar a presença. Tente novamente.");
+ }
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));$(b.dataset.tab).classList.remove("hidden");document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("primary",x===b));if(b.dataset.tab==="history")report();if(b.dataset.tab==="results")renderResults()});
+$("validateBtn").onclick=validateWithPhoto;
+$("sessionSelect").onchange=()=>{db.activeId=$("sessionSelect").value||null;save()};
+$("createSession").onclick=()=>{const date=$("sessionDate").value||today(),name=$("sessionName").value.trim()||"Treino";const s={id:"T"+Date.now(),date,name,closed:false};db.sessions.push(s);db.activeId=s.id;save();message("Treino criado. Presenças liberadas.",true)};
+$("saveReportDraft").onclick=()=>{
+ const s=active();if(!s){alert("Crie ou selecione um treino aberto.");return}
+ s.report=$("sessionReport").value;
+ try{localStorage.setItem(KEY,JSON.stringify(db));$("reportDraftMessage").textContent="Relatório salvo neste aparelho. Você pode voltar depois para concluir o treino.";}
+ catch(e){$("reportDraftMessage").textContent="Não foi possível salvar. Verifique o espaço disponível no aparelho.";}
+};
+$("closeSession").onclick=()=>{
+  const s=active();if(!s){alert("Não há treino aberto.");return}
+  if($("closePassword").value!==APP_PASSWORD){alert("Senha incorreta.");$("closePassword").focus();return}
+  const reportText=$("sessionReport").value.trim();
+  // Relatório opcional: o treino pode ser encerrado mesmo sem texto.
+  s.report=reportText;
+  const choices=db.players.map(p=>`<label style="display:block;margin:10px 0">${esc(p.name)}<select data-close-grade="${esc(p.code)}"><option value="">Escolha SS, A, B, C ou D</option>${["SS","A","B","C","D","FALTOU"].map(g=>`<option value="${g}" ${p.grade===g?"selected":""}>${g==="FALTOU"?"Faltou (−30)":g==="D"?"D (−10)":`${g} (+${({"SS":20,"A":15,"B":10,"C":5})[g]})`}</option>`).join("")}</select></label>`).join("");
+  const container=document.createElement("div");container.style.cssText="position:fixed;inset:0;z-index:10000;background:#000d;display:flex;align-items:center;justify-content:center;padding:16px";
+  container.innerHTML=`<div style="background:#171717;border:1px solid #444;border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:85vh;overflow:auto"><h3>Notas finais do treino</h3><p class="muted">SS +20 • A +15 • B +10 • C +5 • D −10 • Faltou −30. A pontuação será atualizada ao encerrar.</p>${choices}<button class="primary" id="finishClose" style="width:100%">Finalizar treino e gerar relatório</button><button id="cancelClose" style="width:100%;margin-top:8px">Cancelar</button></div>`;
+  document.body.appendChild(container);
+  container.querySelector("#cancelClose").onclick=()=>container.remove();
+  container.querySelector("#finishClose").onclick=()=>{
+    const selects=[...container.querySelectorAll("[data-close-grade]")];
+    if(selects.some(x=>!x.value)){alert("Escolha uma nota para todos os jogadores.");return}
+    selects.forEach(x=>{const p=db.players.find(p=>p.code===x.dataset.closeGrade);if(p)p.grade=x.value});
+    finishSession(s,container);
+  };
+};
+function finishSession(s,dialog){
+  for(const p of db.players)if(!recordFor(s.id,p.code))db.records.push({sessionId:s.id,playerCode:p.code,status:"absent",time:"—",date:s.date});
+  s.grades=Object.fromEntries(db.players.map(p=>[p.code,p.grade||""]));
+  const gradePoints={SS:20,A:15,B:10,C:5,D:-10,FALTOU:-30};
+  s.pointChanges={};
+  db.players.forEach(p=>{const delta=gradePoints[p.grade]||0;p.score=Math.max(0,(Number(p.score)||0)+delta);s.pointChanges[p.code]=delta;});
+  s.closed=true;s.completedCount=db.sessions.filter(x=>x.closed).length+1;
+  if(s.completedCount%5===0)s.lineup=buildLineup();
+  db.activeId=null;$("closePassword").value="";if(dialog)dialog.remove();save();renderResults();
+  document.querySelectorAll("main section").forEach(x=>x.classList.add("hidden"));$("results").classList.remove("hidden");
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("primary",x.dataset.tab==="results"));
+  message("Treino concluído! Resultado completo gerado.",true);
+};
+$("addPlayer").onclick=()=>{const name=$("newName").value.trim();if(!name){alert("Digite o nome do jogador.");return}if(db.players.some(p=>p.name.toLowerCase()===name.toLowerCase())){alert("Esse jogador já está cadastrado.");return}const slug=name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]+/g,"-").replace(/^-|-$/g,"")||"JOGADOR";const used=new Set(db.players.map(p=>p.code));let number,code,tries=0;do{number=Math.floor(Math.random()*999)+1;code="OR-"+String(number).padStart(3,"0")+"-"+slug;tries++}while(used.has(code)&&tries<2000);if(used.has(code)){alert("Não foi possível gerar um código livre. Tente novamente.");return}db.players.push({name,code,score:100,notes:"",grade:""});$("newName").value="";save()};
+document.addEventListener("input",e=>{
+ const notes=e.target.closest("[data-notes]");
+ if(notes){const p=db.players.find(p=>p.code===notes.dataset.notes);if(p){p.notes=notes.value;localStorage.setItem(KEY,JSON.stringify(db));}}
+});
+document.addEventListener("change",e=>{
+ const grade=e.target.closest("[data-grade]");
+ if(grade){const p=db.players.find(p=>p.code===grade.dataset.grade);if(p){p.grade=grade.value;localStorage.setItem(KEY,JSON.stringify(db));}}
+});
+document.addEventListener("click",e=>{
+ const point=e.target.closest("[data-points]");
+ if(point){const p=db.players.find(x=>x.code===point.dataset.points);if(!p)return;const amount=Number($("pointAmount").value);if(!Number.isInteger(amount)||amount<=0){alert("Digite um número inteiro de pontos maior que zero.");$("pointAmount").focus();return}p.score=Math.max(0,(Number(p.score)||0)+(point.dataset.direction==="plus"?amount:-amount));save();return}
+ const share=e.target.closest("[data-share-result]");if(share){shareResult(share.dataset.shareResult);return}
+ const dl=e.target.closest("[data-download-result]");if(dl){const s=db.sessions.find(x=>x.id===dl.dataset.downloadResult);if(s)download(`orion-fc-resultado-${s.date}.txt`,resultText(s),"text/plain;charset=utf-8");return}
+ const foul=e.target.closest("[data-foul]");
+ if(foul){const p=db.players.find(p=>p.code===foul.dataset.foul);if(!p)return;p.score=Math.max(0,(typeof p.score==="number"?p.score:100)-30);save();}
+});
+document.addEventListener("click",e=>{
+ const del=e.target.closest("[data-delete]");
+ if(del){
+  const player=db.players.find(p=>p.code===del.dataset.delete);
+  if(!player)return;
+  if(!confirm(`Excluir ${player.name} e apagar também o histórico de presenças/faltas desse jogador? Essa ação não pode ser desfeita.`))return;
+  db.players=db.players.filter(p=>p.code!==player.code);
+  db.records=db.records.filter(r=>r.playerCode!==player.code);
+  save();
+  return;
+ }
+});
+document.addEventListener("click",e=>{
+  const special=e.target.closest("[data-special-points]");
+  if(special){const p=db.players.find(x=>x.code===special.dataset.specialPoints);if(!p)return;const amount=Number($("specialPointAmount").value);if(!Number.isInteger(amount)||amount<=0){alert("Digite uma quantidade inteira maior que zero.");$("specialPointAmount").focus();return}p.score=Math.max(0,(Number(p.score)||0)+(special.dataset.direction==="plus"?amount:-amount));save();return}
+  const delReport=e.target.closest("[data-delete-report]");
+  if(delReport){const s=db.sessions.find(x=>x.id===delReport.dataset.deleteReport);if(!s)return;if(!$("closePassword").value||$("closePassword").value!==APP_PASSWORD){alert("Digite a senha de encerramento na aba Treino / dados antes de apagar relatórios.");return}if(!confirm(`Apagar o relatório "${s.name}" e todas as presenças/faltas deste treino? Essa ação não pode ser desfeita.`))return;db.sessions=db.sessions.filter(x=>x.id!==s.id);db.records=db.records.filter(r=>r.sessionId!==s.id);if(db.activeId===s.id)db.activeId=null;save();renderResults();alert("Relatório apagado.");return}
+});
+$("resetTrainings").onclick=()=>{if($("closePassword").value!==APP_PASSWORD){alert("Digite a senha de encerramento antes de zerar os treinos.");return}if(!confirm("Tem certeza que deseja zerar TODOS os treinos, relatórios e registros de presença/falta? A pontuação atual dos jogadores será mantida. Essa ação não pode ser desfeita."))return;db.sessions=[];db.records=[];db.activeId=null;save();renderResults();$("sessionReport").value="";$("reportDraftMessage").textContent="";alert("Todos os treinos e relatórios foram zerados. A pontuação dos jogadores foi mantida.");};
+$("reportPlayer").onchange=report;
+$("exportBtn").onclick=()=>{const rows=[["Jogador","Código","Treino","Data","Status","Horário"]];for(const r of db.records){const p=db.players.find(p=>p.code===r.playerCode),s=db.sessions.find(s=>s.id===r.sessionId);rows.push([p?.name||"",r.playerCode,s?.name||"",r.date,r.status,r.time])}const csv=rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\n");download("orion-fc-relatorio.csv",csv,"text/csv;charset=utf-8")};
+$("backupBtn").onclick=()=>download("orion-fc-backup.json",JSON.stringify(db,null,2),"application/json");
+function download(name,data,type){const a=document.createElement("a"),url=URL.createObjectURL(new Blob(["\ufeff",data],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+$("restoreFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.players)||!Array.isArray(d.sessions)||!Array.isArray(d.records))throw 0;if(confirm("Substituir os dados atuais pelo backup?")){db=d;save();alert("Backup restaurado.")}}catch(err){alert("Arquivo de backup inválido.")}e.target.value=""};
+
+$("sessionDate").value=today();render();renderResults();
+</script>
+</body></html>
